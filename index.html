@@ -2898,12 +2898,16 @@ function renderPayment(){
       <div class="breadcrumb" id="backToLanding">← Retour</div>
       <div class="section-head">
         <h2>Finaliser l'inscription</h2>
-        <p>Paiement en crypto uniquement pour le moment. Envoie ta preuve sur WhatsApp, puis débloque avec le code que tu recevras.</p>
+        <p>Choisis ton mode de paiement, envoie ta preuve sur WhatsApp, puis débloque avec le code que tu recevras.</p>
       </div>
 
       <div class="paywall-card">
         <div class="method-grid">
-          <button class="method-card selected" data-method="crypto">
+          <button class="method-card selected" data-method="orange">
+            <span class="method-name">Orange Money</span>
+            <span class="method-sub">${COURSE.priceGNF}</span>
+          </button>
+          <button class="method-card" data-method="crypto">
             <span class="method-name">Crypto (USDT)</span>
             <span class="method-sub">${COURSE.priceUSDT} · BEP20</span>
           </button>
@@ -2940,12 +2944,32 @@ function renderPayment(){
     state.view = 'landing'; render();
   });
 
-  state.selectedMethod = 'crypto';
+  function updateConfirmButton(){
+    const confirmBtn = document.getElementById('confirmPay');
+    const method = state.selectedMethod;
+    let msg;
+    if(method === 'orange'){
+      msg = `Bonjour, je viens d'envoyer le paiement pour la formation "${COURSE.title}" (${COURSE.priceGNF}) via Orange Money. Voici ma preuve de paiement :`;
+    } else {
+      msg = `Bonjour, je viens d'envoyer le paiement pour la formation "${COURSE.title}" (${COURSE.priceUSDT}) en crypto USDT (BEP20). Voici ma preuve de paiement :`;
+    }
+    confirmBtn.href = `https://wa.me/${CONTACT_WHATSAPP_LINK}?text=${encodeURIComponent(msg)}`;
+    confirmBtn.target = '_blank';
+  }
+
+  document.querySelectorAll('.method-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      document.querySelectorAll('.method-card').forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+      state.selectedMethod = card.dataset.method;
+      renderMethodDetail();
+      updateConfirmButton();
+    });
+  });
+
+  state.selectedMethod = 'orange';
   renderMethodDetail();
-  const confirmBtn0 = document.getElementById('confirmPay');
-  const msg0 = encodeURIComponent(`Bonjour, je viens d'envoyer le paiement pour la formation "${COURSE.title}" (${COURSE.priceUSDT}) en crypto USDT (BEP20). Voici ma preuve de paiement :`);
-  confirmBtn0.href = `https://wa.me/${CONTACT_WHATSAPP_LINK}?text=${msg0}`;
-  confirmBtn0.target = '_blank';
+  updateConfirmButton();
 
   document.getElementById('verifyPaymentBtn').addEventListener('click', async ()=>{
     const txInput = document.getElementById('txHashInput');
@@ -3007,13 +3031,13 @@ function renderPayment(){
 function renderMethodDetail(){
   const COURSE = getCourse();
   const el = document.getElementById('methodDetail');
-  if(state.selectedMethod === 'orange' || state.selectedMethod === 'momo'){
-    const label = state.selectedMethod === 'orange' ? 'Orange Money' : 'MTN MoMo';
+  if(state.selectedMethod === 'orange'){
     el.innerHTML = `
       <div class="field">
-        <label>Numéro ${label}</label>
-        <input type="tel" placeholder="Ex : 620 00 00 00" id="phoneInput">
+        <label>Numéro Orange Money</label>
+        <div class="crypto-box">+224 625 22 79 62</div>
       </div>
+      <p class="note" style="margin-bottom:16px;">Envoie exactement ${COURSE.priceGNF} sur ce numéro via Orange Money, puis clique sur "Envoyer ma preuve de paiement" ci-dessous. Ta formation sera débloquée dès vérification.</p>
     `;
   } else if(state.selectedMethod === 'crypto'){
     el.innerHTML = `
